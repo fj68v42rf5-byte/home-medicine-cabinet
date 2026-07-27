@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { X, UserPlus, LogIn, UserCheck, Shield, Sparkles, Check } from 'lucide-react';
+import { X, UserPlus, LogIn, UserCheck, Shield, Sparkles, Check, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function AuthModal({ isOpen, onClose }) {
-  const { users, currentUser, registerUser, switchAccount } = useAuth();
+  const { users, currentUser, registerUser, switchAccount, logoutUser } = useAuth();
   
   const [isCreating, setIsCreating] = useState(false);
   const [name, setName] = useState('');
@@ -164,6 +164,19 @@ export default function AuthModal({ isOpen, onClose }) {
               </div>
             </form>
           )}
+
+          <div className="pt-2 border-t border-slate-100">
+            <button
+              onClick={() => {
+                logoutUser();
+                onClose();
+              }}
+              className="w-full py-2.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-all border border-red-100 hover:border-red-200"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Sign Out / Lock Cabinet</span>
+            </button>
+          </div>
 
         </div>
       </div>

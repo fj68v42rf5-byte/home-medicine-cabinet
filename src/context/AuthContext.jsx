@@ -2,93 +2,18 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
-// Sample seed data for brand-new user accounts to demonstrate functionality
-const SEED_MEDICATIONS = [
-  {
-    id: 'med_seed_1',
-    name: 'Ibuprofen 400mg',
-    brand: 'Advil',
-    category: 'Pain Relief',
-    form: 'Tablets',
-    quantity: 28,
-    unit: 'pills',
-    expiryDate: '2027-08-15',
-    location: 'Medicine Cabinet',
-    barcode: '5000223456789',
-    notes: 'Take 1 tablet after meals for pain relief.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'med_seed_2',
-    name: 'Cetirizine 10mg',
-    brand: 'Zyrtec',
-    category: 'Allergy',
-    form: 'Tablets',
-    quantity: 6,
-    unit: 'pills',
-    expiryDate: '2026-08-10', // Expiring soon! (3 weeks away from July 21 2026)
-    location: 'Bedside Drawer',
-    barcode: '4008400000000',
-    notes: 'Daily antihistamine for seasonal hay fever.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'med_seed_3',
-    name: 'Amoxicillin 500mg',
-    brand: 'Amoxil',
-    category: 'Antibiotics',
-    form: 'Capsules',
-    quantity: 12,
-    unit: 'pills',
-    expiryDate: '2025-11-20', // Already Expired! Will auto-move to Expired folder
-    location: 'Refrigerator',
-    barcode: '300450449087',
-    notes: 'Old antibiotic prescription from last winter.',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'med_seed_4',
-    name: 'Vitamin C 1000mg',
-    brand: 'Emergen-C',
-    category: 'Vitamins',
-    form: 'Packs / Sachets',
-    quantity: 0, // Depleted! Shows in Shopping List
-    unit: 'sachets',
-    expiryDate: '2027-12-31',
-    location: 'Kitchen Shelf',
-    barcode: '8712345678901',
-    notes: 'Immune support supplement.',
-    createdAt: new Date().toISOString()
-  }
-];
-
-const DEFAULT_ACCOUNTS = [
-  {
-    id: 'usr_default',
-    name: 'Sarah Jenkins',
-    email: 'sarah@home.org',
-    avatarColor: 'bg-teal-500'
-  },
-  {
-    id: 'usr_family',
-    name: 'Michael (Dad)',
-    email: 'michael@home.org',
-    avatarColor: 'bg-indigo-500'
-  }
-];
-
 export function AuthProvider({ children }) {
-  // Saved user profiles
+  // Saved user profiles - defaults to empty array to ensure complete privacy
   const [users, setUsers] = useState(() => {
     const saved = localStorage.getItem('curamed_accounts');
-    return saved ? JSON.parse(saved) : DEFAULT_ACCOUNTS;
+    return saved ? JSON.parse(saved) : [];
   });
 
-  // Current logged in user
+  // Current logged in user (null by default if no user is registered/active)
   const [currentUser, setCurrentUser] = useState(() => {
     const savedId = localStorage.getItem('curamed_active_user_id');
-    const allUsers = JSON.parse(localStorage.getItem('curamed_accounts') || JSON.stringify(DEFAULT_ACCOUNTS));
-    return allUsers.find(u => u.id === savedId) || allUsers[0];
+    const allUsers = JSON.parse(localStorage.getItem('curamed_accounts') || '[]');
+    return allUsers.find(u => u.id === savedId) || null;
   });
 
   // Current user's isolated medication list
@@ -96,7 +21,10 @@ export function AuthProvider({ children }) {
 
   // Load medications for current active user
   useEffect(() => {
-    if (!currentUser?.id) return;
+    if (!currentUser?.id) {
+      setMedications([]);
+      return;
+    }
     
     const userStorageKey = `curamed_meds_${currentUser.id}`;
     const savedMeds = localStorage.getItem(userStorageKey);
@@ -109,15 +37,9 @@ export function AuthProvider({ children }) {
         setMedications([]);
       }
     } else {
-      // Only pre-seed the very first default profile (Sarah Jenkins) with sample data.
-      // Other profiles (like Dad or new signups) start with an empty, clean cabinet.
-      if (currentUser.id === 'usr_default') {
-        localStorage.setItem(userStorageKey, JSON.stringify(SEED_MEDICATIONS));
-        setMedications(SEED_MEDICATIONS);
-      } else {
-        localStorage.setItem(userStorageKey, JSON.stringify([]));
-        setMedications([]);
-      }
+      // New user accounts start completely empty
+      localStorage.setItem(userStorageKey, JSON.stringify([]));
+      setMedications([]);
     }
 
     localStorage.setItem('curamed_active_user_id', currentUser.id);
@@ -136,6 +58,7 @@ export function AuthProvider({ children }) {
     const found = users.find(u => u.email.toLowerCase() === emailOrId.toLowerCase() || u.id === emailOrId);
     if (found) {
       setCurrentUser(found);
+      localStorage.setItem('curamed_active_user_id', found.id);
       return { success: true };
     }
     return { success: false, error: 'User account not found.' };
@@ -149,6 +72,7 @@ export function AuthProvider({ children }) {
     const existing = users.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (existing) {
       setCurrentUser(existing);
+      localStorage.setItem('curamed_active_user_id', existing.id);
       return { success: true, message: 'Account already exists. Switched profile.' };
     }
 
@@ -164,14 +88,21 @@ export function AuthProvider({ children }) {
     setUsers(updatedUsers);
     localStorage.setItem('curamed_accounts', JSON.stringify(updatedUsers));
     setCurrentUser(newUser);
+    localStorage.setItem('curamed_active_user_id', newUser.id);
 
     return { success: true };
+  };
+
+  const logoutUser = () => {
+    setCurrentUser(null);
+    localStorage.removeItem('curamed_active_user_id');
   };
 
   const switchAccount = (userId) => {
     const target = users.find(u => u.id === userId);
     if (target) {
       setCurrentUser(target);
+      localStorage.setItem('curamed_active_user_id', target.id);
     }
   };
 
@@ -210,6 +141,7 @@ export function AuthProvider({ children }) {
 
   // Export / Import Backup Data
   const exportUserData = () => {
+    if (!currentUser) return;
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
       user: currentUser,
       medications: medications,
@@ -244,6 +176,7 @@ export function AuthProvider({ children }) {
       medications,
       registerUser,
       loginUser,
+      logoutUser,
       switchAccount,
       addMedication,
       editMedication,

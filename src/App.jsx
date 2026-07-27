@@ -9,6 +9,7 @@ import ExpiredFolder from './components/ExpiredFolder';
 import ShoppingList from './components/ShoppingList';
 import AuthModal from './components/AuthModal';
 import Toast from './components/Toast';
+import OnboardingView from './components/OnboardingView';
 import { getActiveMedications, getExpiredMedications, getExpiringSoonMedications } from './services/expiryService';
 import { PRESET_CATEGORIES } from './data/mockMedDatabase';
 import { Pill, Plus, Filter, ShieldCheck, Sparkles, Inbox, Search } from 'lucide-react';
@@ -40,6 +41,15 @@ function MainApp() {
   const showToast = (message, type = 'info') => {
     setToast({ message, type });
   };
+
+  if (!currentUser) {
+    return (
+      <>
+        <OnboardingView onRegisterSuccess={(name) => showToast(`Welcome, ${name}! Your cabinet is ready.`, 'success')} />
+        <Toast toast={toast} onClose={() => setToast(null)} />
+      </>
+    );
+  }
 
   // Categorize medications using expiry service
   const activeMeds = getActiveMedications(medications);
