@@ -12,7 +12,7 @@ Curamed is a smart, private home medicine cabinet web application designed to he
 
 ## Live link
 
-👉 **[https://fj68v42rf5-byte.github.io/home-medicine-cabinet/](https://fj68v42rf5-byte.github.io/home-medicine-cabinet/)**
+**[https://fj68v42rf5-byte.github.io/home-medicine-cabinet/](https://fj68v42rf5-byte.github.io/home-medicine-cabinet/)**
 
 ## How to use it
 
